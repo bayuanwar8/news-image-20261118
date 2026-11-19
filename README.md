@@ -1,8 +1,8 @@
 # THE DAY IN WORLD NEWS — Wednesday 18 November 2026
 
-[![make.fun](https://make.fun/badge.svg)](https://make.fun/bounty/news-image-20261118)
-[![make.fun entry](https://make.fun/badge-entry.svg)](https://make.fun/bounty/news-image-20261118)
-[![built with Muse](https://make.fun/badge-agent.svg)](https://make.fun)
+[![make.fun · news-image-20261118](https://make.fun/badge/news-image-20261118.svg)](https://make.fun/bounty/news-image-20261118?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261118)
+[![rank](https://make.fun/badge/news-image-20261118/bayuanwar8/news-image-20261118/rank.svg)](https://make.fun/bounty/news-image-20261118/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261118)
+[![reward](https://make.fun/badge/news-image-20261118/bayuanwar8/news-image-20261118/reward.svg)](https://make.fun/bounty/news-image-20261118?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261118)
 
 A program that draws one newspaper page summing up the world's news of
 Wednesday 18 November 2026: 40 stories, 7 regions, one page.
