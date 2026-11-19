@@ -484,8 +484,9 @@ function star(cv: Canvas, cx: number, cy: number, r: number, c: RGB) {
   cv.poly([[cx, cy - r], [cx + r * 0.28, cy - r * 0.28], [cx + r, cy], [cx + r * 0.28, cy + r * 0.28], [cx, cy + r], [cx - r * 0.28, cy + r * 0.28], [cx - r, cy], [cx - r * 0.28, cy - r * 0.28]], c);
 }
 function flag(cv: Canvas, x: number, y: number, w: number, h: number, kind: 'cn' | 'us' | 'ru') {
-  // pole
+  // pole with gold finial
   cv.rect(x - 1, y - 14, 2, h + 14, [60, 50, 40]);
+  cv.circle(x, y - 15, 2, [201, 162, 39]);
   if (kind === 'cn') {
     cv.rect(x, y, w, h, [222, 41, 16]);
     star(cv, x + w * 0.28, y + h * 0.3, Math.min(w, h) * 0.16, [255, 222, 0]);
@@ -502,6 +503,10 @@ function flag(cv: Canvas, x: number, y: number, w: number, h: number, kind: 'cn'
     cv.rect(x, y + h / 3, w, h / 3, [0, 57, 166]);
     cv.rect(x, y + 2 * h / 3, w, h / 3, [213, 0, 50]);
   }
+  // fold shadows: two thin vertical crease lines
+  const fold: RGB = kind === 'cn' ? [150, 20, 8] : kind === 'us' ? [120, 120, 130] : [160, 160, 165];
+  cv.vline(Math.round(x + w * 0.55), Math.round(y), Math.round(y + h), fold);
+  cv.vline(Math.round(x + w * 0.82), Math.round(y), Math.round(y + h), fold);
 }
 function skyline(cv: Canvas, x: number, yBase: number, w: number, h: number, c: RGB, seed: number) {
   // deterministic pseudo-random skyline
@@ -527,76 +532,191 @@ function windows(cv: Canvas, x: number, y: number, w: number, h: number, c: RGB)
 
 // -------------------------------------------------------------- hero art ---
 function heroArt1(cv: Canvas, x: number, y: number, w: number, h: number) {
-  // Shenzhen tarmac at sunset: warm sky, sun, skyline, 3 flags, red carpet.
-  cv.vgrad(x, y, w, h, [248, 176, 88], [250, 214, 140]);
-  cv.circle(x + w * 0.78, y + h * 0.3, 13, [255, 240, 190]);
-  cv.circle(x + w * 0.78, y + h * 0.3, 17, [255, 220, 140]);
-  skyline(cv, x + 4, y + h * 0.62, w - 8, h * 0.34, [52, 44, 66], 1234);
-  windows(cv, x + 4, y + h * 0.3, w - 8, h * 0.3, [255, 214, 120]);
-  cv.rect(x, y + h * 0.62, w, h * 0.38, [38, 36, 44]); // tarmac
-  cv.rect(x, y + h * 0.66, w, 2, [220, 220, 220]);
-  // red carpet
-  cv.poly([[x + w * 0.34, y + h], [x + w * 0.44, y + h * 0.66], [x + w * 0.56, y + h * 0.66], [x + w * 0.66, y + h]], [150, 20, 20]);
-  flag(cv, x + w * 0.14, y + h * 0.42, 26, 15, 'cn');
-  flag(cv, x + w * 0.47, y + h * 0.42, 26, 15, 'us');
-  flag(cv, x + w * 0.78, y + h * 0.42, 26, 15, 'ru');
+  // Shenzhen tarmac at sunset: warm 3-stop sky, sun setting behind a varied
+  // skyline with lit windows, red carpet, two leaders, plane tail, 3 flags.
+  cv.vgrad(x, y, w, h * 0.34, [250, 138, 58], [252, 196, 104]);
+  cv.vgrad(x, y + h * 0.34, w, h * 0.28, [252, 196, 104], [254, 224, 158]);
+  // low sun, half hidden behind the towers
+  cv.circle(x + w * 0.36, y + h * 0.44, 17, [255, 214, 130]);
+  cv.circle(x + w * 0.36, y + h * 0.44, 12, [255, 242, 196]);
+  // skyline: fixed towers, varied shapes (0 plain, 1 spire, 2 stepped, 3 antenna)
+  const yb = y + h * 0.62;
+  const towers: [number, number, number, number][] = [
+    [0.01, 0.07, 20, 0], [0.09, 0.06, 28, 1], [0.16, 0.08, 16, 0], [0.25, 0.05, 24, 3],
+    [0.31, 0.07, 30, 1], [0.39, 0.06, 18, 2], [0.46, 0.08, 22, 0], [0.55, 0.05, 26, 1],
+    [0.61, 0.07, 15, 0], [0.69, 0.06, 24, 2], [0.76, 0.07, 19, 0], [0.84, 0.06, 27, 3],
+    [0.91, 0.07, 17, 1],
+  ];
+  const TWR: RGB = [52, 44, 66];
+  for (const [fx, fw, fh, kind] of towers) {
+    const tx = x + fx * w, tw = fw * w, top = yb - fh;
+    cv.rect(tx, top, tw, fh, TWR);
+    if (kind === 1) cv.poly([[tx + tw / 2 - 2, top], [tx + tw / 2 + 2, top], [tx + tw / 2, top - 9]], TWR);
+    else if (kind === 2) { cv.rect(tx + 2, top - 4, tw - 4, 4, TWR); cv.rect(tx + 5, top - 7, tw - 10, 3, TWR); }
+    else if (kind === 3) { cv.vline(Math.round(tx + tw / 2), Math.round(top - 8), Math.round(top), TWR); cv.circle(tx + tw / 2, top - 9, 1.5, [255, 90, 60]); }
+    // lit windows on this tower only
+    for (let wy = top + 4; wy < yb - 3; wy += 6)
+      for (let wx = tx + 3; wx < tx + tw - 3; wx += 6)
+        if (((Math.round(wx) * 3 + Math.round(wy) * 7) % 5) < 2) cv.rect(wx, wy, 1.5, 2, [255, 205, 110]);
+  }
+  // birds
+  for (const [bx, by] of [[0.56, 0.10], [0.63, 0.07], [0.70, 0.12]] as const) {
+    const px = x + bx * w, py = y + by * h;
+    cv.line(px - 4, py, px - 1, py - 2, [60, 48, 60]);
+    cv.line(px + 1, py - 2, px + 4, py, [60, 48, 60]);
+  }
+  cv.rect(x, yb, w, h * 0.38, [38, 36, 44]); // tarmac
+  cv.rect(x, y + h * 0.66, w, 1, [200, 200, 200]); // runway line
+  // red carpet, gold edges, widening toward the viewer
+  cv.poly([[x + w * 0.30, y + h], [x + w * 0.43, y + h * 0.64], [x + w * 0.57, y + h * 0.64], [x + w * 0.70, y + h]], [158, 22, 22]);
+  cv.line(x + w * 0.43, y + h * 0.64, x + w * 0.30, y + h, [201, 162, 39]);
+  cv.line(x + w * 0.57, y + h * 0.64, x + w * 0.70, y + h, [201, 162, 39]);
+  // two leaders shaking hands at the carpet's end
+  for (const sx of [0.475, 0.525]) {
+    const cx = x + sx * w, hy = y + h * 0.60;
+    cv.circle(cx, hy, 1.5, [20, 18, 22]);
+    cv.rect(cx - 1.5, hy + 1.5, 3, 5, [20, 18, 22]);
+  }
+  cv.line(x + w * 0.475 + 2, y + h * 0.625, x + w * 0.50, y + h * 0.62, [20, 18, 22]);
+  cv.line(x + w * 0.525 - 2, y + h * 0.625, x + w * 0.50, y + h * 0.62, [20, 18, 22]);
+  // parked airplane tail fin at the right edge
+  cv.poly([[x + w - 18, yb], [x + w - 4, yb], [x + w - 7, y + h * 0.40], [x + w - 14, y + h * 0.40]], [72, 84, 112]);
+  cv.line(x + w - 16, y + h * 0.52, x + w - 6, y + h * 0.52, [185, 28, 28]);
+  cv.rect(x + w - 26, y + h * 0.58, 26, 4, [90, 96, 110]);
+  // three large flags on poles
+  flag(cv, x + w * 0.10, y + h * 0.34, 34, 20, 'cn');
+  flag(cv, x + w * 0.44, y + h * 0.34, 34, 20, 'us');
+  flag(cv, x + w * 0.74, y + h * 0.34, 34, 20, 'ru');
 }
 function heroArt2(cv: Canvas, x: number, y: number, w: number, h: number) {
-  // Night over the Gulf: stars, drones with dotted intercept paths, sea, ship.
-  cv.vgrad(x, y, w, h, [8, 14, 40], [18, 34, 66]);
+  // Night over the Gulf: star field, full moon, coastline, two ships (one
+  // burning), five drones with dotted intercept arcs and burst flashes.
+  cv.vgrad(x, y, w, h * 0.68, [6, 10, 30], [18, 32, 62]);
+  // stars of varied sizes, deterministic
   let s = 777;
-  for (let i = 0; i < 26; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; star(cv, x + (s % 1000) / 1000 * w, y + ((s >> 7) % 1000) / 1000 * h * 0.5, 1, [255, 255, 255]); }
-  cv.circle(x + w * 0.85, y + h * 0.18, 9, [235, 235, 220]);
-  // drones + dotted paths
-  const drones: [number, number][] = [[0.18, 0.28], [0.42, 0.2], [0.62, 0.34], [0.8, 0.26]];
+  for (let i = 0; i < 42; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const sx = x + (s % 1000) / 1000 * w, sy = y + ((s >> 7) % 1000) / 1000 * h * 0.55;
+    const r = (s >> 3) % 10;
+    if (r < 6) cv.set(sx, sy, [255, 255, 255]);
+    else if (r < 8) star(cv, sx, sy, 1.5, [255, 255, 255]);
+    else star(cv, sx, sy, 2.5, [255, 240, 200]);
+  }
+  // full moon with glow
+  cv.ring(x + w * 0.88, y + h * 0.20, 11, [210, 210, 195], 2);
+  cv.circle(x + w * 0.88, y + h * 0.20, 8, [238, 238, 226]);
+  cv.circle(x + w * 0.88 - 2, y + h * 0.20 + 2, 1.5, [210, 210, 200]);
+  cv.circle(x + w * 0.88 + 3, y + h * 0.20 - 3, 1, [210, 210, 200]);
+  // horizon glow + distant coastline (left) with two lit windows
+  cv.rect(x, y + h * 0.60, w, h * 0.08, [44, 64, 104]);
+  cv.poly([[x, y + h * 0.68], [x + w * 0.16, y + h * 0.60], [x + w * 0.30, y + h * 0.64], [x + w * 0.38, y + h * 0.68]], [10, 16, 32]);
+  cv.rect(x + w * 0.18, y + h * 0.615, 1.5, 1.5, [255, 200, 110]);
+  cv.rect(x + w * 0.24, y + h * 0.625, 1.5, 1.5, [255, 200, 110]);
+  // drones + dotted intercept arcs + bursts
+  const drones: [number, number][] = [[0.10, 0.26], [0.28, 0.16], [0.48, 0.30], [0.66, 0.18], [0.86, 0.34]];
   for (const [fx, fy] of drones) {
     const dx = x + fx * w, dy = y + fy * h;
-    cv.dashedLine(dx - 34, dy + 16, dx, dy, [255, 190, 90], 3, 3);
+    cv.dashedLine(dx - 30, dy + 14, dx, dy, [255, 190, 90], 3, 3);
     cv.poly([[dx - 7, dy], [dx + 7, dy], [dx, dy + 3]], [40, 40, 46]);
     cv.circle(dx, dy - 1, 2, [255, 120, 60]);
   }
-  // intercept burst
-  star(cv, x + w * 0.55, y + h * 0.3, 6, [255, 200, 90]);
+  for (const [fx, fy, fr] of [[0.38, 0.24, 6], [0.58, 0.32, 5], [0.76, 0.22, 4]] as const) {
+    star(cv, x + w * fx, y + h * fy, fr, [255, 200, 90]);
+    cv.circle(x + w * fx, y + h * fy, 1.5, [255, 255, 255]);
+  }
   // sea
-  cv.rect(x, y + h * 0.68, w, h * 0.32, [10, 28, 52]);
-  for (let i = 0; i < 4; i++) cv.line(x + 8 + i * 30, y + h * (0.74 + i * 0.05), x + 40 + i * 34, y + h * (0.74 + i * 0.05), [70, 110, 160]);
-  // ship
-  cv.rect(x + w * 0.6, y + h * 0.74, 52, 8, [30, 30, 36]);
-  cv.rect(x + w * 0.6 + 14, y + h * 0.68, 18, 6, [30, 30, 36]);
-  cv.rect(x + w * 0.6 + 30, y + h * 0.62, 3, 8, [30, 30, 36]);
-  cv.circle(x + w * 0.6 + 31, y + h * 0.6, 2, [255, 80, 60]);
+  cv.rect(x, y + h * 0.68, w, h * 0.32, [9, 24, 48]);
+  for (let i = 0; i < 6; i++) cv.line(x + 6 + i * 26, y + h * (0.72 + i * 0.035), x + 44 + i * 30, y + h * (0.72 + i * 0.035), i % 2 ? [120, 150, 190] : [70, 110, 160]);
+  // ship 1: larger, lit portholes
+  cv.rect(x + w * 0.30, y + h * 0.76, 56, 8, [28, 28, 34]);
+  cv.rect(x + w * 0.30 + 16, y + h * 0.70, 20, 6, [28, 28, 34]);
+  cv.rect(x + w * 0.30 + 34, y + h * 0.66, 4, 8, [28, 28, 34]);
+  cv.circle(x + w * 0.30 + 36, y + h * 0.64, 1.5, [255, 90, 60]);
+  for (let i = 0; i < 3; i++) cv.rect(x + w * 0.30 + 8 + i * 14, y + h * 0.785, 1.5, 1.5, [255, 200, 110]);
+  // ship 2: smaller, on fire, smoke drifting
+  cv.rect(x + w * 0.74, y + h * 0.78, 40, 7, [24, 24, 30]);
+  cv.rect(x + w * 0.74 + 12, y + h * 0.73, 12, 5, [24, 24, 30]);
+  cv.circle(x + w * 0.80, y + h * 0.72, 3, [255, 140, 40]);
+  cv.circle(x + w * 0.80, y + h * 0.70, 2, [255, 90, 30]);
+  cv.circle(x + w * 0.795, y + h * 0.64, 2.5, [130, 130, 135]);
+  cv.circle(x + w * 0.785, y + h * 0.58, 3.5, [150, 150, 155]);
+  cv.circle(x + w * 0.77, y + h * 0.51, 4, [170, 170, 175]);
 }
 function heroArt3(cv: Canvas, x: number, y: number, w: number, h: number) {
-  // Deep space: stars, small blue Earth, Voyager probe with dish, dotted path.
-  cv.rect(x, y, w, h, [4, 6, 18]);
+  // Deep space: rich star field, large Earth with atmosphere glow, a bigger
+  // Voyager probe with dish and booms, dotted path with tick marks.
+  cv.rect(x, y, w, h, [3, 5, 16]);
   let s = 4242;
-  for (let i = 0; i < 40; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; star(cv, x + (s % 1000) / 1000 * w, y + ((s >> 7) % 1000) / 1000 * h, 1, [255, 255, 255]); }
-  // Earth, small, lower left: blue disc, then green land patches on top
-  cv.circle(x + w * 0.16, y + h * 0.72, 14, [52, 120, 200]);
-  cv.circle(x + w * 0.16 - 4, y + h * 0.72 - 4, 4, [80, 170, 90]);
-  cv.circle(x + w * 0.16 + 5, y + h * 0.72 + 4, 3.5, [80, 170, 90]);
-  cv.circle(x + w * 0.16 + 2, y + h * 0.72 - 7, 2.5, [80, 170, 90]);
-  // dotted path from Earth to probe
-  cv.dashedLine(x + w * 0.2, y + h * 0.66, x + w * 0.66, y + h * 0.3, [255, 220, 120], 4, 4);
-  // Voyager probe: gold body + white dish + booms
-  const px = x + w * 0.68, py = y + h * 0.3;
-  cv.line(px - 26, py + 10, px + 26, py - 10, [200, 200, 200]);
-  cv.rect(px - 8, py - 6, 16, 12, [212, 175, 55]);
-  cv.poly([[px + 6, py - 10], [px + 22, py - 18], [px + 22, py - 2], [px + 6, py + 2]], [240, 240, 240]);
-  cv.line(px - 8, py + 6, px - 20, py + 16, [180, 180, 180]);
-  cv.circle(px - 22, py + 17, 3, [255, 220, 120]);
-  cv.text('1 LIGHT-DAY', px - 58, py - 14, SANS_B, 8, [255, 220, 120], 1);
+  for (let i = 0; i < 64; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const sx = x + (s % 1000) / 1000 * w, sy = y + ((s >> 7) % 1000) / 1000 * h;
+    const r = (s >> 3) % 12;
+    if (r < 7) cv.set(sx, sy, [255, 255, 255]);
+    else if (r < 9) star(cv, sx, sy, 1.5, [255, 255, 255]);
+    else if (r < 10) star(cv, sx, sy, 2.5, [255, 240, 200]);
+    else if (r < 11) star(cv, sx, sy, 2, [170, 200, 255]);
+    else cv.set(sx, sy, [255, 220, 160]);
+  }
+  // Earth, larger, lower left: atmosphere glow, blue disc, land, clouds
+  const ex = x + w * 0.14, ey = y + h * 0.74;
+  cv.ring(ex, ey, 22, [90, 160, 230], 2);
+  cv.circle(ex, ey, 20, [52, 120, 200]);
+  cv.circle(ex - 6, ey - 5, 5, [80, 170, 90]);
+  cv.circle(ex + 7, ey + 5, 4, [80, 170, 90]);
+  cv.circle(ex + 3, ey - 10, 3, [80, 170, 90]);
+  cv.circle(ex - 10, ey + 7, 3, [80, 170, 90]);
+  cv.circle(ex - 2, ey - 1, 2.5, [235, 240, 245]);
+  cv.circle(ex + 10, ey - 4, 2, [235, 240, 245]);
+  cv.circle(ex + 1, ey + 11, 2, [235, 240, 245]);
+  // dotted path from Earth to probe, with distance tick marks
+  const p0x = x + w * 0.22, p0y = y + h * 0.58, p1x = x + w * 0.64, p1y = y + h * 0.26;
+  cv.dashedLine(p0x, p0y, p1x, p1y, [255, 220, 120], 4, 4);
+  for (const t of [0.3, 0.55, 0.8]) {
+    const tx = p0x + (p1x - p0x) * t, ty = p0y + (p1y - p0y) * t;
+    cv.line(tx - 2, ty - 3, tx + 2, ty + 3, [255, 220, 120]);
+  }
+  // Voyager probe, larger: gold body, white dish, booms, RTG fins, antenna
+  const px = x + w * 0.70, py = y + h * 0.30;
+  cv.line(px - 30, py + 12, px + 30, py - 12, [200, 200, 200]); // main boom
+  cv.rect(px - 11, py - 7, 22, 14, [212, 175, 55]); // gold body
+  cv.rect(px - 11, py - 7, 22, 3, [232, 200, 90]); // body highlight
+  cv.poly([[px + 8, py - 12], [px + 28, py - 22], [px + 28, py - 2], [px + 8, py + 2]], [240, 240, 240]); // dish
+  cv.line(px + 8, py - 12, px + 18, py - 12, [200, 200, 200]); // dish feed
+  cv.circle(px + 28, py - 12, 1.5, [255, 220, 120]);
+  cv.line(px - 10, py + 7, px - 24, py + 18, [180, 180, 180]); // magnetometer boom
+  cv.circle(px - 26, py + 19, 3.5, [255, 220, 120]);
+  cv.rect(px - 16, py - 10, 4, 5, [90, 90, 95]); // RTG fins
+  cv.rect(px - 16, py + 5, 4, 5, [90, 90, 95]);
+  cv.line(px - 2, py - 7, px - 6, py - 20, [180, 180, 180]); // antenna
+  cv.circle(px - 6, py - 21, 1.5, [255, 255, 255]);
+  cv.text('1 LIGHT-DAY', x + w * 0.40, y + h * 0.14, SANS_B, 8, [255, 220, 120], 1);
 }
 
 // ------------------------------------------------------------ medium art ---
 function medArt(cv: Canvas, id: number, x: number, y: number, w: number, h: number) {
-  if (id === 4) { // drones over dark sky
-    cv.vgrad(x, y, w, h, [16, 20, 44], [40, 52, 84]);
-    cv.dashedLine(x + 8, y + h * 0.7, x + w * 0.4, y + h * 0.3, [255, 190, 90], 3, 3);
-    cv.dashedLine(x + w * 0.6, y + h * 0.75, x + w * 0.8, y + h * 0.35, [255, 190, 90], 3, 3);
-    cv.poly([[x + w * 0.38, y + h * 0.28], [x + w * 0.44, y + h * 0.28], [x + w * 0.41, y + h * 0.34]], [30, 30, 36]);
-    star(cv, x + w * 0.82, y + h * 0.3, 5, [255, 200, 90]);
-    cv.rect(x, y + h * 0.82, w, h * 0.18, [24, 24, 30]);
+  if (id === 4) { // drones over a night city: stars, dotted paths, bursts, glow
+    cv.vgrad(x, y, w, h, [14, 18, 40], [36, 46, 78]);
+    let s = 31337;
+    for (let i = 0; i < 14; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; cv.set(x + (s % 1000) / 1000 * w, y + ((s >> 7) % 1000) / 1000 * h * 0.5, [255, 255, 255]); }
+    // city glow + building silhouettes with lit windows at the bottom
+    cv.rect(x, y + h * 0.78, w, 2, [255, 170, 80]);
+    cv.rect(x, y + h * 0.80, w, h * 0.20, [24, 24, 30]);
+    const blds: [number, number, number][] = [[0.04, 0.16, 0.30], [0.22, 0.12, 0.36], [0.36, 0.20, 0.26], [0.58, 0.14, 0.32], [0.74, 0.18, 0.28], [0.90, 0.08, 0.24]];
+    for (const [fx, fw, fh] of blds) cv.rect(x + fx * w, y + h * (0.80 - fh), fw * w, h * fh + h * 0.20, [18, 18, 24]);
+    for (let i = 0; i < 8; i++) cv.rect(x + 10 + i * 22, y + h * (0.68 + (i % 3) * 0.05), 1.5, 1.5, [255, 200, 110]);
+    // three drones with dotted paths
+    const drones4: [number, number][] = [[0.25, 0.30], [0.55, 0.22], [0.78, 0.36]];
+    for (const [fx, fy] of drones4) {
+      const dx = x + fx * w, dy = y + fy * h;
+      cv.dashedLine(dx - 26, dy + 10, dx, dy, [255, 190, 90], 3, 3);
+      cv.poly([[dx - 6, dy], [dx + 6, dy], [dx, dy + 3]], [30, 30, 36]);
+      cv.circle(dx, dy - 1, 1.5, [255, 120, 60]);
+    }
+    // two interception bursts
+    for (const [fx, fy, fr] of [[0.42, 0.30, 5], [0.68, 0.26, 4]] as const) {
+      star(cv, x + w * fx, y + h * fy, fr, [255, 200, 90]);
+      cv.circle(x + w * fx, y + h * fy, 1.5, [255, 255, 255]);
+    }
   } else if (id === 5) { // Fed: market bars falling
     cv.rect(x, y, w, h, [240, 238, 228]);
     const bars = [0.5, 0.62, 0.45, 0.7, 0.55, 0.8];
